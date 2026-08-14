@@ -1,0 +1,243 @@
+{
+  "info": {
+    "name": "Allo Bank - Split Bill API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Postman Collection for Allo Bank Backend Technical Test. Run the requests sequentially from top to bottom."
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8080"
+    },
+    {
+      "key": "group_id",
+      "value": ""
+    },
+    {
+      "key": "andi_id",
+      "value": ""
+    },
+    {
+      "key": "budi_id",
+      "value": ""
+    },
+    {
+      "key": "citra_id",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Create Bill Group",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/groups",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "groups"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Bali Trip\",\n  \"participants\": [\n    \"Andi\",\n    \"Budi\",\n    \"Citra\"\n  ]\n}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status is 201 Created', function () { pm.response.to.have.status(201); });",
+              "const json = pm.response.json();",
+              "pm.collectionVariables.set('group_id', json.data.id);",
+              "// Extracting participant IDs dynamically so the next requests work out of the box",
+              "pm.collectionVariables.set('andi_id', json.data.participants[0].id);",
+              "pm.collectionVariables.set('budi_id', json.data.participants[1].id);",
+              "pm.collectionVariables.set('citra_id', json.data.participants[2].id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Get Bill Group Detail",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{base_url}}/api/groups/{{group_id}}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "groups",
+            "{{group_id}}"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status is 200 OK', function () { pm.response.to.have.status(200); });",
+              "pm.test('Group name is Bali Trip', function () { pm.expect(pm.response.json().data.name).to.eql('Bali Trip'); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Add Expense 1 (Andi Pays)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/groups/{{group_id}}/expenses",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "groups",
+            "{{group_id}}",
+            "expenses"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"description\": \"Seafood Dinner\",\n  \"amount\": 300000.00,\n  \"paidById\": \"{{andi_id}}\"\n}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status is 201 Created', function () { pm.response.to.have.status(201); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Add Expense 2 (Budi Pays)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/groups/{{group_id}}/expenses",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "groups",
+            "{{group_id}}",
+            "expenses"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"description\": \"Taxi to Hotel\",\n  \"amount\": 150000.00,\n  \"paidById\": \"{{budi_id}}\"\n}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status is 201 Created', function () { pm.response.to.have.status(201); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Get All Expenses",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{base_url}}/api/groups/{{group_id}}/expenses",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "groups",
+            "{{group_id}}",
+            "expenses"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status is 200 OK', function () { pm.response.to.have.status(200); });",
+              "pm.test('Has 2 expenses', function () { pm.expect(pm.response.json().data.length).to.eql(2); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "6. Calculate Settlement Summary",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{base_url}}/api/groups/{{group_id}}/settlement",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "groups",
+            "{{group_id}}",
+            "settlement"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status is 200 OK', function () { pm.response.to.have.status(200); });",
+              "const json = pm.response.json();",
+              "pm.test('Total expenses should be 450000', function () { pm.expect(json.data.totalExpenses).to.eql(450000); });",
+              "pm.test('Service charge pct should be 9%', function () { pm.expect(json.data.service_charge_pct).to.eql(9); });"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
